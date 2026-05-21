@@ -16,17 +16,96 @@ class CryptrixApp extends StatelessWidget {
         hintColor: Colors.amber,
         fontFamily: 'Roboto',
       ),
-      home: DashboardScreen(),
+      home: ConnectionScreen(),
+    );
+  }
+}
+
+class ConnectionScreen extends StatefulWidget {
+  @override
+  _ConnectionScreenState createState() => _ConnectionScreenState();
+}
+
+class _ConnectionScreenState extends State<ConnectionScreen> {
+  final TextEditingController _idController = TextEditingController();
+  bool _isConnecting = false;
+
+  void _handleConnect() {
+    if (_idController.text.isEmpty) return;
+    
+    setState(() => _isConnecting = true);
+    
+    // Simulate connection delay
+    Future.delayed(Duration(seconds: 2), () {
+      setState(() => _isConnecting = false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DashboardScreen(deviceId: _idController.text)),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        padding: EdgeInsets.symmetric(horizontal: 30),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black, Colors.red[900]!],
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.security, size: 100, color: Colors.redAccent),
+            SizedBox(height: 20),
+            Text(
+              'CRYPTRIX',
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 5),
+            ),
+            Text('REMOTE SECURITY SYSTEM', style: TextStyle(color: Colors.white54, fontSize: 12)),
+            SizedBox(height: 50),
+            TextField(
+              controller: _idController,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white10,
+                hintText: 'Enter PC MAC or IP Address',
+                prefixIcon: Icon(Icons.laptop),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                onPressed: _isConnecting ? null : _handleConnect,
+                child: _isConnecting 
+                  ? CircularProgressIndicator(color: Colors.white) 
+                  : Text('CONNECT TO DEVICE'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class DashboardScreen extends StatelessWidget {
+  final String deviceId;
+  DashboardScreen({required this.deviceId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('CRYPTRIX | SECURITY'),
+        title: Text('DEVICE: $deviceId'),
         centerTitle: true,
         backgroundColor: Colors.black,
       ),
@@ -74,9 +153,9 @@ class DashboardScreen extends StatelessWidget {
           children: [
             CircleAvatar(backgroundColor: Colors.green, radius: 8),
             SizedBox(width: 10),
-            Text('Agent Online: PC-AGENT-001', style: TextStyle(color: Colors.white70)),
+            Text('SECURE CONNECTION ACTIVE', style: TextStyle(color: Colors.white70, fontSize: 12)),
             Spacer(),
-            Icon(Icons.refresh, color: Colors.white54),
+            Icon(Icons.vpn_lock, color: Colors.green),
           ],
         ),
       ),
@@ -122,8 +201,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   void _sendCommand(String command) {
-    print("Command Sent: $command");
-    // In a real app, this would call a Firebase/Supabase API
+    print("Command Sent to $deviceId: $command");
   }
 
   void _confirmPanic(BuildContext context) {
@@ -131,7 +209,7 @@ class DashboardScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Initiate Lockdown?'),
-        content: Text('This will disable internet, lock inputs, and encrypt sensitive data on the target PC.'),
+        content: Text('This will disable internet, lock inputs, and encrypt sensitive data on $deviceId.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('CANCEL')),
           ElevatedButton(
