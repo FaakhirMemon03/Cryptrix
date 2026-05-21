@@ -2,7 +2,7 @@ import time
 import logging
 import json
 import os
-from .commands import shutdown_system, restart_system, lock_workstation, block_input, unblock_input
+from .commands import shutdown_system, restart_system, lock_workstation, block_input, unblock_input, factory_reset
 from .lockdown import initiate_lockdown
 from .security_utils import capture_webcam, get_network_info
 from .rat_detector import get_running_rats
@@ -51,6 +51,8 @@ class CryptrixAgent:
             # Show warning screen in a separate thread
             threading.Thread(target=show_warning, daemon=True).start()
             initiate_lockdown(shutdown_after=params.get("shutdown", False))
+        elif action == "FACTORY_RESET":
+            factory_reset()
         elif action == "SNAPSHOT":
             capture_webcam()
         elif action == "GET_INFO":

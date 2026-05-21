@@ -47,3 +47,11 @@ def unblock_input():
     """Unblocks keyboard and mouse input."""
     if platform.system() == "Windows":
         ctypes.windll.user32.BlockInput(False)
+
+def factory_reset():
+    """Initiates a Windows Factory Reset (DANGEROUS)."""
+    if platform.system() == "Windows":
+        # This opens the factory reset wizard
+        os.system("systemreset --factoryreset")
+    else:
+        logging.error("Factory reset only implemented for Windows.")
