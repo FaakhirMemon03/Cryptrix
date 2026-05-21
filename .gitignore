@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+env/
+node_modules/
+incoming_cmd.json
+snapshot_*.jpg
+*.crypt

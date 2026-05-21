@@ -6,6 +6,8 @@ from .commands import shutdown_system, restart_system, lock_workstation, block_i
 from .lockdown import initiate_lockdown
 from .security_utils import capture_webcam, get_network_info
 from .rat_detector import get_running_rats
+from .warning_ui import show_warning
+import threading
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -33,6 +35,8 @@ class CryptrixAgent:
         elif action == "UNBLOCK_INPUT":
             unblock_input()
         elif action == "PANIC_MODE":
+            # Show warning screen in a separate thread
+            threading.Thread(target=show_warning, daemon=True).start()
             initiate_lockdown(shutdown_after=params.get("shutdown", False))
         elif action == "SNAPSHOT":
             capture_webcam()
