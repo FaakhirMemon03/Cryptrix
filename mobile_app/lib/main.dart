@@ -8,219 +8,190 @@ class CryptrixApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cryptrix Remote',
+      title: 'CRYPTRIX | OS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: Colors.redAccent,
-        hintColor: Colors.amber,
-        fontFamily: 'Roboto',
+        scaffoldBackgroundColor: Color(0xFF000800),
+        primaryColor: Color(0xFF00FF41), // Matrix Green
+        hintColor: Color(0xFF00FF41),
+        fontFamily: 'Courier', // Hacker font
       ),
-      home: ConnectionScreen(),
+      home: LoginScreen(),
     );
   }
 }
 
-class ConnectionScreen extends StatefulWidget {
+class LoginScreen extends StatefulWidget {
   @override
-  _ConnectionScreenState createState() => _ConnectionScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _ConnectionScreenState extends State<ConnectionScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _idController = TextEditingController();
-  bool _isConnecting = false;
+  bool _isAccessing = false;
 
-  void _handleConnect() {
+  void _bypassSecurity() {
     if (_idController.text.isEmpty) return;
-    
-    setState(() => _isConnecting = true);
-    
-    // Simulate connection delay
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() => _isConnecting = false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => DashboardScreen(deviceId: _idController.text)),
-      );
+    setState(() => _isAccessing = true);
+    Future.delayed(Duration(seconds: 3), () {
+      setState(() => _isAccessing = false);
+      Navigator.push(context, MaterialPageRoute(builder: (context) => TerminalDashboard(deviceId: _idController.text)));
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: EdgeInsets.symmetric(horizontal: 30),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black, Colors.red[900]!],
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text("--- SYSTEM ACCESS REQ ---", style: TextStyle(color: Color(0xFF00FF41), letterSpacing: 2)),
+              SizedBox(height: 30),
+              Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Color(0xFF00FF41), width: 2),
+                  boxShadow: [BoxShadow(color: Color(0xFF00FF41).withOpacity(0.3), blurRadius: 20)],
+                ),
+                child: Icon(Icons.qr_code_scanner, size: 80, color: Color(0xFF00FF41)),
+              ),
+              SizedBox(height: 40),
+              Text("IDENTIFY TARGET DEVICE", style: TextStyle(color: Color(0xFF00FF41), fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 20),
+              Container(
+                width: 300,
+                child: TextField(
+                  controller: _idController,
+                  style: TextStyle(color: Color(0xFF00FF41)),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.terminal, color: Color(0xFF00FF41)),
+                    hintText: "Enter MAC / IP...",
+                    hintStyle: TextStyle(color: Color(0xFF00FF41).withOpacity(0.5)),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF41))),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF41), width: 2)),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+              _isAccessing 
+                ? Column(children: [CircularProgressIndicator(color: Color(0xFF00FF41)), SizedBox(height: 10), Text("BYPASSING FIREWALL...", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10))])
+                : OutlinedButton(
+                    onPressed: _bypassSecurity,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Color(0xFF00FF41)),
+                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                    ),
+                    child: Text("ESTABLISH CONNECTION", style: TextStyle(color: Color(0xFF00FF41))),
+                  ),
+            ],
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.security, size: 100, color: Colors.redAccent),
-            SizedBox(height: 20),
-            Text(
-              'CRYPTRIX',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 5),
-            ),
-            Text('REMOTE SECURITY SYSTEM', style: TextStyle(color: Colors.white54, fontSize: 12)),
-            SizedBox(height: 50),
-            TextField(
-              controller: _idController,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white10,
-                hintText: 'Enter PC MAC or IP Address',
-                prefixIcon: Icon(Icons.laptop),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                onPressed: _isConnecting ? null : _handleConnect,
-                child: _isConnecting 
-                  ? CircularProgressIndicator(color: Colors.white) 
-                  : Text('CONNECT TO DEVICE'),
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 }
 
-class DashboardScreen extends StatelessWidget {
+class TerminalDashboard extends StatelessWidget {
   final String deviceId;
-  DashboardScreen({required this.deviceId});
+  TerminalDashboard({required this.deviceId});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('DEVICE: $deviceId'),
-        centerTitle: true,
+        title: Text("> CRYPTRIX_OS: $deviceId", style: TextStyle(color: Color(0xFF00FF41), fontSize: 14)),
         backgroundColor: Colors.black,
+        elevation: 0,
+        actions: [IconButton(icon: Icon(Icons.power_settings_new, color: Colors.red), onPressed: () {})],
       ),
       body: Container(
-        padding: EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.black87, Colors.red[900]!],
-          ),
-        ),
+        padding: EdgeInsets.all(10),
         child: Column(
           children: [
-            _buildStatusHeader(),
-            SizedBox(height: 20),
+            _buildTerminalLog(),
+            SizedBox(height: 10),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
+                childAspectRatio: 1.5,
                 children: [
-                  _buildCommandCard(context, 'LOCK SCREEN', Icons.lock, Colors.blue),
-                  _buildCommandCard(context, 'SNAPSHOT', Icons.camera_alt, Colors.green),
-                  _buildCommandCard(context, 'INFO', Icons.info, Colors.cyan),
-                  _buildCommandCard(context, 'BLOCK INPUT', Icons.block, Colors.orange),
-                  _buildCommandCard(context, 'SHUTDOWN', Icons.power_settings_new, Colors.red),
-                  _buildCommandCard(context, 'RESTART', Icons.restart_alt, Colors.purple),
+                  _buildHackerBtn(context, "LOCK_STATION", Icons.lock_outline, Colors.blue),
+                  _buildHackerBtn(context, "GET_SNAPSHOT", Icons.camera_rear, Colors.cyan),
+                  _buildHackerBtn(context, "KILL_NET", Icons.wifi_off, Colors.orange),
+                  _buildHackerBtn(context, "REBOOT_SYS", Icons.restart_alt, Colors.purple),
+                  _buildHackerBtn(context, "FACTORY_RST", Icons.delete_forever, Colors.red),
+                  _buildHackerBtn(context, "GET_IP_LOC", Icons.location_on, Colors.green),
                 ],
               ),
             ),
-            _buildPanicButton(context),
+            _buildPanicMode(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusHeader() {
-    return Card(
-      color: Colors.white10,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            CircleAvatar(backgroundColor: Colors.green, radius: 8),
-            SizedBox(width: 10),
-            Text('SECURE CONNECTION ACTIVE', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            Spacer(),
-            Icon(Icons.vpn_lock, color: Colors.green),
-          ],
-        ),
+  Widget _buildTerminalLog() {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border.all(color: Color(0xFF00FF41).withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("sys_status: ENCRYPTED", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
+          Text("remote_node: $deviceId", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
+          Text("tunnel_active: TRUE", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
+          Spacer(),
+          Text("> AWAITING COMMAND...", style: TextStyle(color: Color(0xFF00FF41), fontSize: 12, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
 
-  Widget _buildCommandCard(BuildContext context, String label, IconData icon, Color color) {
+  Widget _buildHackerBtn(BuildContext context, String label, IconData icon, Color color) {
     return InkWell(
-      onTap: () => _sendCommand(label),
-      child: Card(
-        color: Colors.white.withOpacity(0.05),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      onTap: () {},
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF00FF41).withOpacity(0.3)),
+          color: Colors.black,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: color),
-            SizedBox(height: 10),
-            Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Icon(icon, color: Color(0xFF00FF41), size: 30),
+            SizedBox(height: 5),
+            Text(label, style: TextStyle(color: Color(0xFF00FF41), fontSize: 10, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPanicButton(BuildContext context) {
+  Widget _buildPanicMode(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 60,
-      margin: EdgeInsets.only(top: 20),
+      height: 70,
+      margin: EdgeInsets.symmetric(vertical: 10),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.redAccent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          elevation: 10,
+          backgroundColor: Colors.red.withOpacity(0.2),
+          side: BorderSide(color: Colors.red, width: 2),
         ),
-        onPressed: () => _confirmPanic(context),
-        child: Text(
-          'EMERGENCY PANIC MODE',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  void _sendCommand(String command) {
-    print("Command Sent to $deviceId: $command");
-  }
-
-  void _confirmPanic(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Initiate Lockdown?'),
-        content: Text('This will disable internet, lock inputs, and encrypt sensitive data on $deviceId.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('CANCEL')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              _sendCommand('PANIC_MODE');
-              Navigator.pop(context);
-            },
-            child: Text('EXECUTE'),
-          ),
-        ],
+        onPressed: () {},
+        child: Text("!!! EMERGENCY_LOCKDOWN !!!", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, letterSpacing: 2)),
       ),
     );
   }
