@@ -8,14 +8,27 @@ from .security_utils import capture_webcam, get_network_info
 from .rat_detector import get_running_rats
 from .warning_ui import show_warning
 import threading
+import uuid
+import socket
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class CryptrixAgent:
     def __init__(self):
         self.is_running = True
-        self.device_id = "PC-AGENT-001" # Should be unique or from config
-        logging.info(f"Cryptrix Agent {self.device_id} initialized.")
+        # Automatically get the MAC address as a unique device ID
+        self.device_id = ':'.join(['{:02x}'.format((uuid.getnode() >> ele) & 0xff) 
+                                   for ele in range(0, 8*6, 8)][::-1])
+        
+        # Get local IP
+        try:
+            self.local_ip = socket.gethostbyname(socket.gethostname())
+        except:
+            self.local_ip = "Unknown"
+
+        logging.info(f"Cryptrix Agent Initialized.")
+        logging.info(f"DEVICE ID (MAC): {self.device_id}")
+        logging.info(f"LOCAL IP: {self.local_ip}")
 
     def process_command(self, cmd_data):
         """Dispatches commands to appropriate modules."""
