@@ -2,11 +2,11 @@ import time
 import logging
 import json
 import os
-from .commands import shutdown_system, restart_system, lock_workstation, block_input, unblock_input, factory_reset
-from .lockdown import initiate_lockdown
-from .security_utils import capture_webcam, get_network_info
-from .rat_detector import get_running_rats
-from .warning_ui import show_warning
+from commands import shutdown_system, restart_system, lock_workstation, block_input, unblock_input, factory_reset
+from lockdown import initiate_lockdown
+from security_utils import capture_webcam, get_network_info
+from rat_detector import get_running_rats
+from warning_ui import show_warning
 import threading
 import uuid
 import socket
