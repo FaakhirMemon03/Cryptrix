@@ -14,13 +14,42 @@ except (ImportError, ModuleNotFoundError):
     from security_utils import capture_webcam, get_network_info
     from rat_detector import get_running_rats
     from warning_ui import show_warning
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
 import uuid
 import socket
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+class CommandHandler(BaseHTTPRequestHandler):
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def do_OPTIONS(self):
+        self._set_headers()
+
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        try:
+            cmd_data = json.loads(post_data.decode('utf-8'))
+            # Access the agent instance via a global or class variable
+            if hasattr(self.server, 'agent'):
+                self.server.agent.receive_remote_command(cmd_data)
+            self._set_headers()
+            self.wfile.write(json.dumps({"status": "received"}).encode('utf-8'))
+        except Exception as e:
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(str(e).encode('utf-8'))
+
 class CryptrixAgent:
+
     def __init__(self):
         self.is_running = True
         # Automatically get the MAC address as a unique device ID
@@ -36,6 +65,10 @@ class CryptrixAgent:
         logging.info(f"Cryptrix Agent Initialized.")
         logging.info(f"DEVICE ID (MAC): {self.device_id}")
         logging.info(f"LOCAL IP: {self.local_ip}")
+
+    def receive_remote_command(self, cmd_data):
+        """Processes a command received via HTTP."""
+        self.process_command(cmd_data)
 
     def process_command(self, cmd_data):
         """Dispatches commands to appropriate modules."""
@@ -76,6 +109,16 @@ class CryptrixAgent:
 
     def run(self):
         """Main loop: In a real app, this would be a Firebase/Socket listener."""
+        # Start HTTP API Server in a separate thread
+        def start_api():
+            server_address = ('', 5050)
+            httpd = HTTPServer(server_address, CommandHandler)
+            httpd.agent = self
+            logging.info(f"API Server active on port 5050 (Listening for mobile app)")
+            httpd.serve_forever()
+
+        threading.Thread(target=start_api, daemon=True).start()
+
         # Get the directory where the executable or script is located
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
