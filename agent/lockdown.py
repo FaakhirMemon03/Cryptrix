@@ -1,7 +1,7 @@
 import time
 import logging
-from commands import lock_workstation, block_input, disable_wifi, shutdown_system
-from rat_detector import kill_rats
+from agent.commands import lock_workstation, block_input, disable_wifi, shutdown_system
+from agent.rat_detector import kill_rats
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
