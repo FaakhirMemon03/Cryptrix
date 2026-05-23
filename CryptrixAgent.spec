@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['agent\\monitor.py'],
+    ['run_agent.py'],
     pathex=[],
     binaries=[],
     datas=[],
