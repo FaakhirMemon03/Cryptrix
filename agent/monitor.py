@@ -76,20 +76,37 @@ class CryptrixAgent:
 
     def run(self):
         """Main loop: In a real app, this would be a Firebase/Socket listener."""
-        logging.info("Agent is listening for remote commands...")
+        # Get the directory where the executable or script is located
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            # If running from monitor.py, move up one level to reach project root
+            if os.path.basename(base_path) == 'agent':
+                base_path = os.path.dirname(base_path)
+
+        cmd_file = os.path.join(base_path, "incoming_cmd.json")
         
-        # Simulation: check for a local file 'incoming_cmd.json'
-        # In production, replace this with a real-time event listener
-        cmd_file = "incoming_cmd.json"
+        logging.info(f"Agent is listening for remote commands in: {base_path}")
+        logging.info(f"Command file path: {cmd_file}")
         
         try:
             while self.is_running:
                 if os.path.exists(cmd_file):
                     try:
+                        # Add a small delay to ensure file is fully written
+                        time.sleep(0.1) 
                         with open(cmd_file, 'r') as f:
                             cmd_data = json.load(f)
                         self.process_command(cmd_data)
-                        os.remove(cmd_file) # Process only once
+                        
+                        # Use a retry loop for deletion in case of file locks
+                        for _ in range(3):
+                            try:
+                                os.remove(cmd_file)
+                                break
+                            except:
+                                time.sleep(0.5)
                     except Exception as e:
                         logging.error(f"Failed to process command file: {e}")
                 
@@ -100,3 +117,4 @@ class CryptrixAgent:
 if __name__ == "__main__":
     agent = CryptrixAgent()
     agent.run()
+
