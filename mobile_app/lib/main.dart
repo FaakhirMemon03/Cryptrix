@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(CryptrixApp());
@@ -34,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _bypassSecurity() {
     if (_idController.text.isEmpty) return;
     setState(() => _isAccessing = true);
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       setState(() => _isAccessing = false);
       Navigator.push(context, MaterialPageRoute(builder: (context) => TerminalDashboard(deviceId: _idController.text)));
     });
@@ -70,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: Color(0xFF00FF41)),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.terminal, color: Color(0xFF00FF41)),
-                    hintText: "Enter MAC / IP...",
+                    hintText: "Enter IP Address...",
                     hintStyle: TextStyle(color: Color(0xFF00FF41).withOpacity(0.5)),
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF41))),
                     focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF41), width: 2)),
@@ -96,18 +98,59 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class TerminalDashboard extends StatelessWidget {
+class TerminalDashboard extends StatefulWidget {
   final String deviceId;
   TerminalDashboard({required this.deviceId});
+
+  @override
+  _TerminalDashboardState createState() => _TerminalDashboardState();
+}
+
+class _TerminalDashboardState extends State<TerminalDashboard> {
+  List<String> logs = ["tunnel_active: TRUE", "sys_status: ENCRYPTED"];
+
+  Future<void> _sendCommand(String action, [Map<String, dynamic>? params]) async {
+    setState(() {
+      logs.add("> EXECUTING: $action...");
+    });
+
+    try {
+      // Assuming deviceId is the IP address
+      final url = Uri.parse('http://${widget.deviceId}:5050');
+      final response = await http.post(
+        url,
+        body: jsonEncode({
+          "action": action,
+          "params": params ?? {},
+          "deviceId": widget.deviceId,
+        }),
+        headers: {"Content-Type": "application/json"},
+      ).timeout(Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          logs.add("> SUCCESS: Command $action received.");
+        });
+      } else {
+        setState(() {
+          logs.add("> ERROR: Server returned ${response.statusCode}");
+        });
+      }
+    } catch (e) {
+      setState(() {
+        logs.add("> CRITICAL_ERROR: $e");
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("> CRYPTRIX_OS: $deviceId", style: TextStyle(color: Color(0xFF00FF41), fontSize: 14)),
+        title: Text("> CRYPTRIX_OS: ${widget.deviceId}", style: TextStyle(color: Color(0xFF00FF41), fontSize: 14)),
         backgroundColor: Colors.black,
         elevation: 0,
-        actions: [IconButton(icon: Icon(Icons.power_settings_new, color: Colors.red), onPressed: () {})],
+        actions: [IconButton(icon: Icon(Icons.power_settings_new, color: Colors.red), onPressed: () => Navigator.pop(context))],
       ),
       body: Container(
         padding: EdgeInsets.all(10),
@@ -122,16 +165,16 @@ class TerminalDashboard extends StatelessWidget {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.5,
                 children: [
-                  _buildHackerBtn(context, "LOCK_STATION", Icons.lock_outline, Colors.blue),
-                  _buildHackerBtn(context, "GET_SNAPSHOT", Icons.camera_rear, Colors.cyan),
-                  _buildHackerBtn(context, "KILL_NET", Icons.wifi_off, Colors.orange),
-                  _buildHackerBtn(context, "REBOOT_SYS", Icons.restart_alt, Colors.purple),
-                  _buildHackerBtn(context, "FACTORY_RST", Icons.delete_forever, Colors.red),
-                  _buildHackerBtn(context, "GET_IP_LOC", Icons.location_on, Colors.green),
+                  _buildHackerBtn("LOCK", Icons.lock_outline, Colors.blue),
+                  _buildHackerBtn("SNAPSHOT", Icons.camera_rear, Colors.cyan),
+                  _buildHackerBtn("KILL_NET", Icons.wifi_off, Colors.orange), // Note: disable_wifi in agent
+                  _buildHackerBtn("RESTART", Icons.restart_alt, Colors.purple),
+                  _buildHackerBtn("FACTORY_RESET", Icons.delete_forever, Colors.red),
+                  _buildHackerBtn("GET_INFO", Icons.location_on, Colors.green),
                 ],
               ),
             ),
-            _buildPanicMode(context),
+            _buildPanicMode(),
           ],
         ),
       ),
@@ -147,22 +190,18 @@ class TerminalDashboard extends StatelessWidget {
         color: Colors.black,
         border: Border.all(color: Color(0xFF00FF41).withOpacity(0.5)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("sys_status: ENCRYPTED", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
-          Text("remote_node: $deviceId", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
-          Text("tunnel_active: TRUE", style: TextStyle(color: Color(0xFF00FF41), fontSize: 10)),
-          Spacer(),
-          Text("> AWAITING COMMAND...", style: TextStyle(color: Color(0xFF00FF41), fontSize: 12, fontWeight: FontWeight.bold)),
-        ],
+      child: ListView.builder(
+        itemCount: logs.length,
+        itemBuilder: (context, index) {
+          return Text(logs[index], style: TextStyle(color: Color(0xFF00FF41), fontSize: 10));
+        },
       ),
     );
   }
 
-  Widget _buildHackerBtn(BuildContext context, String label, IconData icon, Color color) {
+  Widget _buildHackerBtn(String action, IconData icon, Color color) {
     return InkWell(
-      onTap: () {},
+      onTap: () => _sendCommand(action),
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(color: Color(0xFF00FF41).withOpacity(0.3)),
@@ -173,14 +212,14 @@ class TerminalDashboard extends StatelessWidget {
           children: [
             Icon(icon, color: Color(0xFF00FF41), size: 30),
             SizedBox(height: 5),
-            Text(label, style: TextStyle(color: Color(0xFF00FF41), fontSize: 10, fontWeight: FontWeight.bold)),
+            Text(action, style: TextStyle(color: Color(0xFF00FF41), fontSize: 10, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPanicMode(BuildContext context) {
+  Widget _buildPanicMode() {
     return Container(
       width: double.infinity,
       height: 70,
@@ -190,9 +229,10 @@ class TerminalDashboard extends StatelessWidget {
           backgroundColor: Colors.red.withOpacity(0.2),
           side: BorderSide(color: Colors.red, width: 2),
         ),
-        onPressed: () {},
+        onPressed: () => _sendCommand("PANIC_MODE"),
         child: Text("!!! EMERGENCY_LOCKDOWN !!!", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, letterSpacing: 2)),
       ),
     );
   }
 }
+
